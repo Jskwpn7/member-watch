@@ -1,0 +1,7 @@
+requests>=2.31
+beautifulsoup4>=4.12
+feedparser>=6.0
+trafilatura>=1.12
+PyYAML>=6.0
+pypdf>=4.2
+python-dateutil>=2.9

@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Member Watch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ------------------------------------------------------------------
+   Three typefaces, three jobs, so the reader always knows what they
+   are looking at:
+     Archivo (sans)      the tool's own furniture
+     Newsreader (serif)  words written by the member organisation
+     Plex Mono           machine-generated metadata
+   ------------------------------------------------------------------ */
+:root{
+  --paper:#eaedf1; --card:#fff; --ink:#141a21; --muted:#5d6b78;
+  --rule:#d0d7de; --rule-soft:#e3e8ed;
+  --signal:#1b44c8; --signal-wash:#e6ebfb;
+  --review:#8b1e5b; --review-wash:#f7e9f1;
+  --gutter:132px; --radius:3px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font:400 15px/1.5 Archivo,system-ui,sans-serif;
+  font-feature-settings:"tnum" 1;
+}
+a{color:var(--signal)}
+:focus-visible{outline:2px solid var(--signal); outline-offset:2px}
+.wrap{max-width:1140px; margin:0 auto; padding:0 24px 96px}
+
+/* ---------- masthead ---------- */
+.masthead{padding:40px 0 22px; border-bottom:2px solid var(--ink)}
+.masthead h1{
+  margin:0; font-size:29px; font-weight:700; letter-spacing:-.022em;
+}
+.masthead h1 span{color:var(--muted); font-weight:400}
+.stats{
+  margin-top:12px; display:flex; flex-wrap:wrap; gap:6px 22px;
+  font:500 11.5px/1 "IBM Plex Mono",monospace;
+  letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
+}
+.stats b{color:var(--ink); font-weight:600}
+.stats .warn{color:var(--review)}
+
+/* ---------- controls ---------- */
+.controls{position:sticky; top:0; z-index:20; background:var(--paper);
+  padding:14px 0 12px; border-bottom:1px solid var(--rule)}
+.lenses{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:11px}
+.lens{
+  border:1px solid var(--rule); background:var(--card); color:var(--ink);
+  padding:6px 13px; border-radius:100px; cursor:pointer;
+  font:500 13px Archivo,sans-serif;
+}
+.lens:hover{border-color:var(--muted)}
+.lens[aria-pressed="true"]{
+  background:var(--signal); border-color:var(--signal); color:#fff;
+}
+.searchrow{display:flex; gap:9px; flex-wrap:wrap}
+#q{
+  flex:1 1 260px; min-width:0; padding:9px 13px;
+  border:1px solid var(--rule); border-radius:var(--radius);
+  background:var(--card); font:400 15px Archivo,sans-serif; color:var(--ink);
+}
+#q::placeholder{color:var(--muted)}
+.searchrow select{
+  padding:9px 11px; border:1px solid var(--rule); border-radius:var(--radius);
+  background:var(--card); font:400 13.5px Archivo,sans-serif; color:var(--ink);
+}
+.reset{
+  border:0; background:none; color:var(--muted); cursor:pointer;
+  font:500 13px Archivo,sans-serif; text-decoration:underline; padding:0 4px;
+}
+
+/* ---------- the log ---------- */
+.week{display:grid; grid-template-columns:var(--gutter) 1fr; gap:26px;
+  border-bottom:1px solid var(--rule-soft); padding:26px 0}
+.week:last-child{border-bottom:0}
+.marker{position:sticky; top:132px; align-self:start;
+  font:500 11px/1.55 "IBM Plex Mono",monospace; letter-spacing:.05em;
+  color:var(--muted); text-transform:uppercase}
+.marker .wk{display:block; color:var(--ink); font-weight:600; font-size:12px}
+.marker .count{display:block; margin-top:3px}
+
+.item{padding:15px 0; border-bottom:1px solid var(--rule-soft)}
+.item:last-child{border-bottom:0}
+.item:first-child{padding-top:0}
+.meta{
+  font:500 11px/1 "IBM Plex Mono",monospace; letter-spacing:.05em;
+  color:var(--muted); text-transform:uppercase;
+  display:flex; flex-wrap:wrap; gap:5px 10px; align-items:center;
+}
+.meta .org{color:var(--ink); font-weight:600}
+.new{color:var(--signal); font-weight:600}
+.guess{color:var(--muted); border-bottom:1px dotted currentColor; cursor:help}
+.flag{color:var(--review); font-weight:600}
+.title{
+  margin:7px 0 5px;
+  font:400 20px/1.32 Newsreader,Georgia,serif; letter-spacing:-.005em;
+}
+.title a{text-decoration:none; color:var(--ink);
+  box-shadow:inset 0 -1px 0 var(--rule)}
+.title a:hover{color:var(--signal); box-shadow:inset 0 -1px 0 var(--signal)}
+.summary{margin:0 0 9px; color:var(--muted); font-size:14px; max-width:74ch}
+.tags{display:flex; flex-wrap:wrap; gap:5px}
+.tag{
+  font:500 10.5px/1 "IBM Plex Mono",monospace; letter-spacing:.07em;
+  text-transform:uppercase; padding:4px 7px; border-radius:var(--radius);
+  border:1px solid var(--rule); color:var(--muted); background:var(--card);
+}
+.tag.type{background:var(--ink); border-color:var(--ink); color:#fff}
+.tag.topic{cursor:pointer}
+.tag.topic:hover{border-color:var(--signal); color:var(--signal)}
+.tag.topic[aria-pressed="true"]{
+  background:var(--signal-wash); border-color:var(--signal); color:var(--signal)}
+.tag.review{background:var(--review-wash); border-color:var(--review);
+  color:var(--review)}
+
+.empty{padding:64px 0; max-width:52ch}
+.empty h2{font:400 22px Newsreader,Georgia,serif; margin:0 0 8px}
+.empty p{color:var(--muted); margin:0}
+mark{background:var(--signal-wash); color:inherit; padding:0 1px}
+
+@media (max-width:720px){
+  .wrap{padding:0 16px 64px}
+  .week{grid-template-columns:1fr; gap:10px}
+  .marker{position:static; display:flex; gap:12px; align-items:baseline;
+    padding-bottom:4px; border-bottom:1px solid var(--rule)}
+  .marker .count{margin-top:0}
+  .title{font-size:18px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .item{animation:rise .22s ease both}
+  @keyframes rise{from{opacity:0; transform:translateY(3px)}}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <h1>Member Watch <span>— consumer network harvest log</span></h1>
+  <div class="stats" id="stats">Loading…</div>
+</header>
+
+<div class="controls">
+  <div class="lenses" id="lenses"></div>
+  <div class="searchrow">
+    <input id="q" type="search" placeholder="Search titles and full text…"
+           autocomplete="off" spellcheck="false">
+    <select id="org"><option value="">All organisations</option></select>
+    <select id="type"><option value="">All content types</option></select>
+    <button class="reset" id="reset" type="button">Clear filters</button>
+  </div>
+</div>
+
+<main id="log" aria-live="polite"></main>
+</div>
+
+<script>
+const state = {lens:null, q:"", org:"", type:"", topics:new Set()};
+let DATA = null;
+
+const esc = s => (s||"").replace(/[&<>"]/g, c =>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const fmtDate = iso => {
+  if(!iso) return "no date";
+  const d = new Date(iso + (iso.length === 10 ? "T00:00:00Z" : ""));
+  return isNaN(d) ? iso : d.toLocaleDateString("en-GB",
+    {day:"numeric", month:"short", year:"numeric", timeZone:"UTC"});
+};
+
+// Monday of the week a given date falls in -- the log is grouped by the
+// harvest week, because "what is new since last time" is the whole point.
+const weekStart = iso => {
+  const d = new Date(iso);
+  const shift = (d.getUTCDay() + 6) % 7;
+  d.setUTCDate(d.getUTCDate() - shift);
+  return d.toISOString().slice(0,10);
+};
+
+function score(item, terms){
+  if(!terms.length) return 1;
+  const title = (item.title||"").toLowerCase();
+  let total = 0;
+  for(const term of terms){
+    const inTitle = title.includes(term);
+    const body = (item.search||"").split(term).length - 1;
+    if(!inTitle && !body) return 0;          // every term must appear
+    total += (inTitle ? 12 : 0) + Math.min(body, 6);
+  }
+  return total;
+}
+
+function highlight(text, terms){
+  let out = esc(text);
+  for(const term of terms){
+    if(term.length < 3) continue;
+    out = out.replace(new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")})`,"ig"),
+                      "<mark>$1</mark>");
+  }
+  return out;
+}
+
+function filtered(){
+  const terms = state.q.toLowerCase().split(/\s+/).filter(t => t.length > 1);
+  const lens = DATA.taxonomy.lenses.find(l => l.id === state.lens);
+  const f = lens ? lens.filter : {};
+  const cutoff = f.days
+    ? new Date(Date.now() - f.days*864e5).toISOString().slice(0,10) : null;
+
+  const rows = DATA.items.filter(item => {
+    if(state.org  && item.source_id   !== state.org)  return false;
+    if(state.type && item.content_type !== state.type) return false;
+    if(state.topics.size && !item.topics.some(t => state.topics.has(t))) return false;
+    if(f.needs_review && !item.needs_review) return false;
+    if(f.content_types && !f.content_types.includes(item.content_type)) return false;
+    if(f.topics && !item.topics.some(t => f.topics.includes(t))) return false;
+    if(cutoff && item.first_seen.slice(0,10) < cutoff) return false;
+    return score(item, terms) > 0;
+  });
+
+  if(terms.length) rows.sort((a,b) => score(b,terms) - score(a,terms));
+  return {rows, terms};
+}
+
+function render(){
+  const {rows, terms} = filtered();
+  const log = document.getElementById("log");
+
+  if(!rows.length){
+    log.innerHTML = `<div class="empty"><h2>Nothing matches those filters.</h2>
+      <p>Widen the date range, clear the search box, or pick a different lens.
+      The full corpus holds ${DATA.items.length} items from
+      ${DATA.sources.length} organisations.</p></div>`;
+    return;
+  }
+
+  const newest = DATA.items.reduce((m,i) =>
+    i.first_seen > m ? i.first_seen : m, "");
+  const newestWeek = weekStart(newest);
+
+  const weeks = new Map();
+  for(const item of rows){
+    const key = weekStart(item.first_seen);
+    (weeks.get(key) || weeks.set(key, []).get(key)).push(item);
+  }
+
+  log.innerHTML = [...weeks.entries()]
+    .sort((a,b) => b[0] < a[0] ? -1 : 1)
+    .map(([week, items]) => `
+      <section class="week">
+        <div class="marker">
+          <span class="wk">${fmtDate(week)}</span>
+          <span class="count">${items.length} item${items.length===1?"":"s"}</span>
+          ${week === newestWeek ? '<span class="count new">latest run</span>' : ""}
+        </div>
+        <div>${items.map(item => card(item, terms, week === newestWeek)).join("")}</div>
+      </section>`).join("");
+}
+
+function card(item, terms, isNew){
+  const types = DATA.taxonomy.content_type;
+  const topics = DATA.taxonomy.topic;
+  return `<article class="item">
+    <div class="meta">
+      <span class="org">${esc(item.org)}</span>
+      <span>${esc(item.country||"")}</span>
+      <span${item.date_source === "first_seen"
+        ? ' class="guess" title="No publication date on the page — this is the date we first saw it"'
+        : ""}>${fmtDate(item.published_at)}${
+        item.date_source === "first_seen" ? " (harvested)" : ""}</span>
+      ${item.media_type === "pdf" ? "<span>PDF</span>" : ""}
+      ${isNew ? '<span class="new">New</span>' : ""}
+      ${item.updated_at ? "<span>Updated</span>" : ""}
+    </div>
+    <h3 class="title"><a href="${esc(item.url)}" target="_blank"
+      rel="noopener noreferrer">${highlight(item.title || item.url, terms)}</a></h3>
+    <p class="summary">${highlight((item.summary||"").slice(0,230), terms)}…</p>
+    <div class="tags">
+      <span class="tag type" title="${esc(types[item.content_type]||"")}"
+        >${esc(item.content_type||"untagged")}</span>
+      ${item.topics.map(t =>
+        `<button class="tag topic" data-topic="${esc(t)}"
+          aria-pressed="${state.topics.has(t)}"
+          title="${esc(topics[t]||"")}">${esc(t)}</button>`).join("")}
+      ${item.needs_review
+        ? '<span class="tag review" title="Low classifier confidence — check the tags">needs review</span>'
+        : ""}
+    </div>
+  </article>`;
+}
+
+function chrome(){
+  const failed = (DATA.runs[0]||{}).failed_sources || 0;
+  const review = DATA.items.filter(i => i.needs_review).length;
+  document.getElementById("stats").innerHTML = `
+    <span><b>${DATA.items.length}</b> items</span>
+    <span><b>${DATA.sources.length}</b> organisations</span>
+    <span><b>${DATA.runs.length}</b> harvest runs</span>
+    <span>updated <b>${fmtDate(DATA.generated_at.slice(0,10))}</b></span>
+    ${review ? `<span class="warn"><b>${review}</b> need review</span>` : ""}
+    ${failed ? `<span class="warn"><b>${failed}</b> source${failed===1?"":"s"} failed last run</span>` : ""}`;
+
+  document.getElementById("lenses").innerHTML = DATA.taxonomy.lenses
+    .map(l => `<button class="lens" data-lens="${l.id}"
+       aria-pressed="false">${esc(l.label)}</button>`).join("");
+
+  const orgSel = document.getElementById("org");
+  for(const s of DATA.sources)
+    orgSel.insertAdjacentHTML("beforeend",
+      `<option value="${esc(s.source_id)}">${esc(s.org)} (${s.items})</option>`);
+
+  const typeSel = document.getElementById("type");
+  for(const [key, label] of Object.entries(DATA.taxonomy.content_type))
+    typeSel.insertAdjacentHTML("beforeend",
+      `<option value="${esc(key)}" title="${esc(label)}">${esc(key)}</option>`);
+}
+
+function wire(){
+  let timer;
+  document.getElementById("q").addEventListener("input", e => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { state.q = e.target.value.trim(); render(); }, 130);
+  });
+  document.getElementById("org").addEventListener("change",
+    e => { state.org = e.target.value; render(); });
+  document.getElementById("type").addEventListener("change",
+    e => { state.type = e.target.value; render(); });
+
+  document.getElementById("lenses").addEventListener("click", e => {
+    const btn = e.target.closest(".lens"); if(!btn) return;
+    state.lens = state.lens === btn.dataset.lens ? null : btn.dataset.lens;
+    document.querySelectorAll(".lens").forEach(b =>
+      b.setAttribute("aria-pressed", b.dataset.lens === state.lens));
+    render();
+  });
+
+  document.getElementById("log").addEventListener("click", e => {
+    const btn = e.target.closest(".tag.topic"); if(!btn) return;
+    const topic = btn.dataset.topic;
+    state.topics.has(topic) ? state.topics.delete(topic) : state.topics.add(topic);
+    render();
+  });
+
+  document.getElementById("reset").addEventListener("click", () => {
+    Object.assign(state, {lens:null, q:"", org:"", type:""});
+    state.topics.clear();
+    document.getElementById("q").value = "";
+    document.getElementById("org").value = "";
+    document.getElementById("type").value = "";
+    document.querySelectorAll(".lens").forEach(b =>
+      b.setAttribute("aria-pressed", "false"));
+    render();
+  });
+}
+
+fetch("data/corpus.json")
+  .then(r => { if(!r.ok) throw new Error(r.status); return r.json(); })
+  .then(data => { DATA = data; chrome(); wire(); render(); })
+  .catch(err => {
+    document.getElementById("log").innerHTML =
+      `<div class="empty"><h2>No harvest data yet.</h2>
+       <p>Run <code>python -m pipeline.run</code> to build
+       <code>site/data/corpus.json</code>, then reload. (${esc(String(err))})</p></div>`;
+  });
+</script>
+</body>
+</html>

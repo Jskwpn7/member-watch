@@ -1,0 +1,17 @@
+id: cag-in
+org: Citizen consumer and civic Action Group
+country: IN
+region: Asia Pacific
+language: en
+homepage: https://www.cag.org.in
+targets:
+  - name: news
+    method: html
+    url: https://www.cag.org.in/newsletters
+    item_selector: .view-content a[href]
+    hint_content_type: news
+  - name: reports
+    method: html
+    url: https://www.cag.org.in/reports
+    item_selector: .view-content a[href]
+    hint_content_type: research
