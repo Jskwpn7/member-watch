@@ -1,0 +1,83 @@
+id: which-uk
+org: Which?
+country: GB
+region: Europe
+language: en
+homepage: https://www.which.co.uk
+targets:
+  # Which?'s policy and insight library -- 2,142 items across 143 pages.
+  # The listing page is a JavaScript app that returns "Loading content" to a
+  # normal fetch, so we call the same public API the page calls. Response
+  # shape confirmed against a live response: items[] at the top level, `path`
+  # is a site-relative URL, and the date arrives as rendered text.
+  - name: policy
+    method: json
+    url: https://7hj996rsx8.execute-api.eu-west-1.amazonaws.com/prod/content-api/search-content
+    http_method: POST
+    headers:
+      origin: https://www.which.co.uk
+      referer: https://www.which.co.uk/
+    body:
+      filters:
+        and:
+          - breadcrumbs.slug: policy-and-insight
+      view: minimal
+      fields: date.published.render_text,path,title,standfirst,description,content_type_data,taxonomy,trending_topics,breadcrumbs,authors
+      limit: 15
+      order: desc
+      order_by: date.published.timestamp
+      neural: true
+      k: 100
+
+    items_path: items
+    url_field: path
+    url_prefix: https://www.which.co.uk
+    title_field: title
+    date_field: date.published.render_text
+
+    page_param: page
+    first_page: 1
+    pages: 143          # ceiling only -- days_back stops us long before this
+    days_back: 100      # ~3 months for the proof of concept; raise later
+
+    # Which? publishes its own content type and topic labels. Those are ground
+    # truth, so we map them straight onto our taxonomy and skip the classifier
+    # entirely for this source -- cheaper and more accurate than inferring from
+    # the text. Counts below are from the live aggregates, for sanity.
+    field_map:
+      content_type:
+        field: content_type_data
+        map:
+          Press statement: news              # 795
+          Press release: news                # 607
+          Policy submission: policy          # 373
+          Policy article: policy             #  80
+          Policy paper: policy               #  59
+          Policy research paper: research    #  77
+          Insight article: research          # 140
+          Data: research                     #  11
+      topics:
+        field: taxonomy
+        item_key: name
+        map:
+          Digital Markets: digital           # 202
+          Financial Services: finance        # 376
+          Fraud: scams                       # 155
+          Sustainability: sustainability     # 120
+          Household Essentials: energy       # 521
+          Travel: travel                     # 285
+          Fair Consumer Markets: law         # 189
+          Trade: law                         #  48
+          Consumer Insight: law              # 228
+
+  # Which?'s general consumer feed. High volume (~30/week) and mostly magazine
+  # content -- product advice, recipes, gardening. No publisher labels here, so
+  # these items do go through the classifier.
+  - name: news
+    method: rss
+    url: https://www.which.co.uk/news/feed/
+    hint_content_type: news
+    exclude_patterns:
+      - /reviews/
+      - /shopping/
+      - /deals/

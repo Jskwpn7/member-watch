@@ -1,0 +1,41 @@
+id: choice-au
+org: CHOICE
+country: AU
+region: Asia Pacific
+language: en
+homepage: https://www.choice.com.au
+targets:
+  # The old config pointed at the root sitemap with include_patterns of
+  # '/consumers-and-data/' and '/about-us/media-releases/'. Neither path
+  # exists on the site, so every URL was filtered out and the target
+  # returned zero -- the silent failure mode the loud logging exists for.
+  #
+  # www.choice.com.au/sitemap.xml is a Yoast sitemap *index* with 33
+  # children, 18 of them product-review sitemaps. discover.py follows the
+  # first 20, so pointing at the index means fetching tens of thousands of
+  # product review URLs to throw nearly all of them away. Point at the two
+  # child sitemaps that hold what we actually want instead.
+
+  # ~200 media releases, /about-us/media/media-releases/YYYY/month/slug.
+  - name: media
+    method: sitemap
+    url: https://www.choice.com.au/media-sitemap.xml
+    hint_content_type: news
+
+  # Submissions, reports and super-complaints -- CHOICE's advocacy output
+  # and the reason they are in this corpus at all.
+  - name: advocacy
+    method: sitemap
+    url: https://www.choice.com.au/campaign-sitemap.xml
+    include_patterns: ['/consumer-advocacy/']
+    hint_content_type: policy
+
+  # Not harvested: post-sitemap*.xml and the product-review sitemaps. That is
+  # several thousand product tests and buying advice pieces, which would bury
+  # the advocacy content this dashboard exists to surface.
+
+  # NOTE: every URL in media-sitemap.xml carries the same lastmod
+  # (2025-11-14), a site migration rather than a publication date. The first
+  # harvest will lean on extract.py to find real dates on the page; anything
+  # it cannot date is labelled "(harvested)". Worth a look at the review
+  # queue after the first run.

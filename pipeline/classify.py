@@ -136,11 +136,22 @@ def classify_offline(taxonomy: dict, items: list) -> dict[int, dict]:
 
 def classify_all(conn, offline: bool = False) -> int:
     taxonomy = load_taxonomy()
+    # Items whose publisher already told us what they are need no model call.
+    # This is both cheaper and more accurate than re-inferring from the text.
+    pre_tagged = conn.execute(
+        "UPDATE items SET status='classified', needs_review=0 "
+        "WHERE status='extracted' AND content_type IS NOT NULL").rowcount
+    conn.commit()
+    if pre_tagged:
+        log.info("%d items already tagged by their publisher, skipping model",
+                 pre_tagged)
+
     rows = conn.execute(
-        "SELECT * FROM items WHERE status='extracted' ORDER BY id").fetchall()
+        "SELECT * FROM items WHERE status='extracted' AND content_type IS NULL "
+        "ORDER BY id").fetchall()
     if not rows:
-        log.info("nothing to classify")
-        return 0
+        log.info("nothing left to classify")
+        return pre_tagged
 
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if offline or not api_key:
@@ -178,8 +189,9 @@ def classify_all(conn, offline: bool = False) -> int:
     flagged = conn.execute(
         "SELECT COUNT(*) c FROM items WHERE needs_review=1 AND reviewed=0"
     ).fetchone()["c"]
-    log.info("classified %d items, %d awaiting review", done, flagged)
-    return done
+    log.info("classified %d by model (+%d from publisher), %d awaiting review",
+             done, pre_tagged, flagged)
+    return done + pre_tagged
 
 
 if __name__ == "__main__":

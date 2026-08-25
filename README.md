@@ -10,24 +10,37 @@ exports JSON, and a single static HTML page reads it.
 
 ## Quick start
 
+**Windows (PowerShell)**
+
+```powershell
+pip install -r requirements.txt
+$env:CONTACT_EMAIL   = "you@yourorg.org"    # goes in the crawler user-agent
+$env:ANTHROPIC_API_KEY = "sk-ant-..."       # optional; omit to run offline
+
+python -m tests.selftest                    # verify before touching real sites
+python -m pipeline.run --offline            # first harvest, no API needed
+cd site; python -m http.server 8000         # then open localhost:8000
+```
+
+To make the environment variables stick across sessions, use
+`setx CONTACT_EMAIL "you@yourorg.org"` once and reopen the terminal.
+
+**macOS / Linux**
+
 ```bash
 pip install -r requirements.txt
-export CONTACT_EMAIL="you@yourorg.org"      # goes in the crawler user-agent
-export ANTHROPIC_API_KEY="sk-ant-..."       # optional; omit to run offline
+export CONTACT_EMAIL="you@yourorg.org"
+export ANTHROPIC_API_KEY="sk-ant-..."
 
-python -m pipeline.run --offline            # first harvest, no API needed
-cd site && python -m http.server 8000       # then open localhost:8000
+python -m tests.selftest
+python -m pipeline.run --offline
+cd site && python -m http.server 8000
 ```
 
-Check it works before pointing it at real websites:
-
-```bash
-bash tests/selftest.sh
-```
-
-That builds a fake member site containing a duplicate article, a page with no
-publication date, and links that should be ignored, then asserts the pipeline
-handles all three correctly.
+`tests/selftest.py` builds a fake member site containing a duplicate article, a
+page with no publication date, and links that should be ignored, then asserts
+the pipeline handles all three. It backs up and restores your real database, so
+it is safe to run at any time.
 
 ---
 
@@ -55,6 +68,22 @@ That separation matters in practice. When you change `taxonomy.yml` you rerun
 | `--offline` | Skip the classification API and use keyword matching. Fine for testing, not for real use. |
 | `--refresh` | Re-check URLs already held, to catch pages that have been edited. Slower; run monthly rather than weekly. |
 | `--limit N` | Stop after N extractions. Useful when adding a new source. |
+
+## Getting a selector right
+
+Never guess a selector and run the whole pipeline to find out. Use:
+
+```powershell
+python tools\try_target.py sources\cag-in.yml news --fetch 3
+```
+
+It fetches the listing, prints what would be captured, and warns about the
+failure modes that do not raise errors — zero results, suspiciously few
+results, titles that are navigation text rather than headlines, patterns so
+loose they pull in the whole site. `--fetch N` also extracts the first N pages
+so you can see the title, date and word count the pipeline would store.
+
+Nothing is written to the database, so iterate freely.
 
 ## Adding a member
 
@@ -108,6 +137,47 @@ the opening text — and records which one it used. Where nothing is found it
 falls back to the harvest date and labels it "(harvested)" in the interface,
 so a date you cannot trust always looks like a date you cannot trust.
 
+## Using a publisher's own labels
+
+Some APIs return the organisation's own content type and topics. That is
+ground truth — Which? knows whether something is a policy submission or a
+press statement better than any model inferring it from the text. Map those
+labels onto our taxonomy with `field_map` and the classifier is skipped
+entirely for that source: cheaper, faster, and more accurate.
+
+```yaml
+    field_map:
+      content_type:
+        field: content_type_data       # dotted path; a string or a list
+        map:
+          Press statement: news
+          Policy submission: policy
+      topics:
+        field: taxonomy                # a list of objects
+        item_key: name                 # which key on each object holds the label
+        map:
+          Digital Markets: digital
+          Financial Services: finance
+```
+
+Unmapped labels are dropped, so an unfamiliar one costs you a topic rather
+than corrupting the taxonomy. The publisher's exact wording is kept in
+`pub_content_type` and shown in the dashboard as a dashed tag beside our
+coarser label, so "Policy submission" is not flattened away into "policy".
+
+Check the aggregates in the API response before writing the map — they list
+every label in use with a count, which tells you what you are covering.
+
+## Controlling backfill
+
+`days_back` stops pagination once results go past a cutoff. Because these
+APIs return newest-first, that is safe: every later page is older still.
+Which?'s library holds 2,142 items over 143 pages; `days_back: 100` fetches
+roughly the last three months and stops, rather than walking the lot. Raise it
+once the pipeline is proven — a deeper backfill costs nothing but time, and
+re-running discovery later will pick up the older items without duplicating
+anything already held.
+
 ## Classification
 
 Two axes defined in `taxonomy.yml`: a single **content type** and one to three
@@ -122,6 +192,23 @@ raw material for few-shot examples later.
 
 Cost is negligible at this volume: batches of 10 items, roughly 100 items a
 week across five organisations.
+
+## Where to keep this folder
+
+**Do not keep the repository inside OneDrive, Dropbox or Google Drive.**
+
+SQLite in WAL mode writes three files that must stay consistent with each other
+(`corpus.db`, `-wal`, `-shm`). Sync clients upload them independently and may
+lock a file mid-write, which produces a corrupted or silently truncated
+database. Syncing a `.git` directory causes similar trouble.
+
+Keep the project on local disk — `C:\\Users\\<you>\\dev\\member-watch` or
+similar — and use a private GitHub repository as the backup. Git already gives
+you versioned history, which is what you actually wanted from OneDrive.
+
+If you must keep it in a synced folder, at minimum change `journal_mode=WAL` to
+`journal_mode=DELETE` in `pipeline/common.py` and pause syncing while a harvest
+runs. This is a mitigation, not a fix.
 
 ## Deploying
 
@@ -149,6 +236,54 @@ The dashboard stores full text for search but displays only a short extract and
 a link out. If it ever becomes visible beyond your own team, keep it that way —
 it is both the safe answer on copyright and the one that sends traffic to
 members rather than away from them.
+
+## When a site needs JavaScript
+
+Some sites render their listing pages client-side. Fetch one with `requests`
+and you get an empty shell — Which?'s policy library at
+`/policy-and-insight/search` returns literally "Loading content". No CSS
+selector can fix this, because the articles are not in the HTML.
+
+**Use the API the page calls.** Open the page in Chrome, DevTools → Network →
+Fetch/XHR, reload, and find the request that returns the listing. Right-click
+it → Copy → Copy as cURL, which gives you the method, headers and body. Then
+use `method: json`:
+
+```yaml
+  - name: policy
+    method: json
+    url: https://example.execute-api.eu-west-1.amazonaws.com/prod/search
+    http_method: POST              # GET is the default
+    body:                          # the payload the page sends
+      filters:
+        contentTypes: policy-paper,policy-submission
+    items_path: data.results       # dotted path to the array
+    url_field: slug                # field holding the link
+    url_prefix: https://www.example.org/policy-and-insight/
+    title_field: title
+    date_field: publishedDate
+    page_param: filters.page       # dotted path to the page number
+    pages: 5                       # stops early when a page comes back empty
+```
+
+Do not guess `items_path`. Run this once and it tells you:
+
+```powershell
+python tools\try_target.py sources\which-uk.yml policy --inspect
+```
+
+It prints the response structure and lists every array of objects it found,
+with the likely `url_field` and `date_field` on each.
+
+This is usually *better* than scraping, not a workaround: an API contract
+changes far less often than a CSS class name, and the dates come back already
+structured. If `items_path` is wrong the error tells you the keys that were
+actually present, so `try_target.py` gets you there in a couple of guesses.
+
+Two fallbacks if there is no usable API: look for a sitemap covering that
+section, since individual articles are often indexed even when the listing
+page is not scrapeable; or render the page with `playwright`, which works on
+anything but is a heavy dependency and a slow run.
 
 ## Known limits
 

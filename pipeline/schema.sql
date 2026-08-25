@@ -22,6 +22,9 @@ CREATE TABLE IF NOT EXISTS items (
   language       TEXT,
   content_type   TEXT,
   topics         TEXT,
+  pub_content_type TEXT,   -- the publisher's own label, verbatim
+  pub_topics       TEXT,   -- json array of the publisher's own topics
+
   confidence     REAL,
   needs_review   INTEGER DEFAULT 0,
   reviewed       INTEGER DEFAULT 0,

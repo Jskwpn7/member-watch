@@ -1,0 +1,68 @@
+id: cag-in
+org: Citizen consumer and civic Action Group
+country: IN
+region: Asia Pacific
+language: en
+homepage: https://www.cag.org.in
+targets:
+  # CAG runs Drupal. The old config assumed the default Views markup
+  # (.view-content .views-row h2 a) and pointed at two URLs that do not do
+  # what their names suggest:
+  #
+  #   /newsletters  is a directory of four newsletter *series*, not of
+  #                 issues. Scraping it captured the series landing pages,
+  #                 which is why titles came back as "Consumer Update Read"
+  #                 -- the selector was matching the "Read" button.
+  #   /reports      does not exist. It 404s. Their reports live under
+  #                 /resources, and the items themselves under /database/.
+  #
+  # Selectors below match on href rather than on theme classes. A Drupal
+  # theme change renames .views-row; it does not renumber the URL space.
+  # The "Read" buttons share each item's href, so discover.py dedupes them
+  # away, and its len(title) > 8 guard drops "Read" if it wins the race --
+  # extract.py then takes the real title off the page.
+
+  - name: blogs
+    method: html
+    url: https://www.cag.org.in/blogs
+    item_selector: a[href*="/blogs/"]
+    hint_content_type: blog
+
+  # ~90 pages of press releases, reports, representations and RTI replies.
+  # Only page one is fetched each week, which is what you want: newest first.
+  - name: resources
+    method: html
+    url: https://www.cag.org.in/resources
+    item_selector: a[href*="/database/"]
+    hint_content_type: research
+
+  # One target per newsletter series, because /newsletters only links to the
+  # series and discover.py does not follow links two levels deep.
+  - name: newsletter-public-newsense
+    method: html
+    url: https://www.cag.org.in/newsletters/public-newsense
+    item_selector: a[href*="/newsletters/public-newsense/"]
+    hint_content_type: news
+
+  - name: newsletter-consumer-update
+    method: html
+    url: https://www.cag.org.in/newsletters/consumer-update
+    item_selector: a[href*="/newsletters/consumer-update/"]
+    hint_content_type: news
+
+  - name: newsletter-current-news
+    method: html
+    url: https://www.cag.org.in/newsletters/current-news
+    item_selector: a[href*="/newsletters/current-news/"]
+    hint_content_type: news
+
+  - name: newsletter-stoppwatch
+    method: html
+    url: https://www.cag.org.in/newsletters/stoppwatch
+    item_selector: a[href*="/newsletters/stoppwatch/"]
+    hint_content_type: news
+
+  # Deliberately not harvested:
+  #   /media-coverage  is third-party journalism about CAG, not CAG's own
+  #                    output. Wrong on copyright and wrong for the corpus.
+  #   /podcasts, /videos  no extractable text.

@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+data/corpus.db-wal
+data/corpus.db-shm
+.venv/
+_to_delete/
+*.zip

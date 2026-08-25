@@ -26,6 +26,7 @@ def export(conn) -> int:
         """SELECT id, source_id, org, country, region, url, title, summary,
                   published_at, date_source, first_seen, updated_at, word_count,
                   media_type, language, content_type, topics, confidence,
+                  pub_content_type,
                   needs_review, body_text
            FROM items WHERE status='classified'
            ORDER BY published_at DESC, id DESC""").fetchall()

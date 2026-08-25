@@ -23,6 +23,9 @@ topic:
   sustainability: Sustainable consumption, repair, greenwashing, waste
   scams:          Fraud, scams, misleading advertising
   law:            Consumer law, redress, competition, general consumer rights
+  travel:         Air travel, holidays, package rights, transport
+  telecoms:       Broadband, mobile, connectivity, postal
+  housing:        Housing, renting, home services, tradespeople
 
 # Named front doors for the dashboard. Each is a saved filter.
 lenses:
