@@ -5,3 +5,4 @@ data/corpus.db-shm
 .venv/
 _to_delete/
 *.zip
+.fuse_hidden*
