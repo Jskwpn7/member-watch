@@ -63,6 +63,19 @@ python -m pipeline.export            # write site/data/corpus.json
 That separation matters in practice. When you change `taxonomy.yml` you rerun
 `classify` alone — no refetching, no extra requests to anyone's website.
 
+Add `--reclassify` to make that rerun actually re-tag things:
+
+```bash
+python -m pipeline.classify --reclassify
+```
+
+Without it, `classify` only looks at items that have never been tagged, so an
+edited taxonomy would silently apply to new items only. `--reclassify` re-tags
+everything the model labelled and leaves publisher-labelled items alone — those
+came from the source's own metadata and are ground truth. It refuses to run
+without `ANTHROPIC_API_KEY` unless you also pass `--offline`, because otherwise
+a missing key would quietly overwrite real labels with keyword guesses.
+
 | Flag | What it does |
 |---|---|
 | `--offline` | Skip the classification API and use keyword matching. Fine for testing, not for real use. |

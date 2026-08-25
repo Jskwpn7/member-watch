@@ -134,7 +134,7 @@ def classify_offline(taxonomy: dict, items: list) -> dict[int, dict]:
     return out
 
 
-def classify_all(conn, offline: bool = False) -> int:
+def classify_all(conn, offline: bool = False, reclassify: bool = False) -> int:
     taxonomy = load_taxonomy()
     # Items whose publisher already told us what they are need no model call.
     # This is both cheaper and more accurate than re-inferring from the text.
@@ -146,14 +146,41 @@ def classify_all(conn, offline: bool = False) -> int:
         log.info("%d items already tagged by their publisher, skipping model",
                  pre_tagged)
 
-    rows = conn.execute(
-        "SELECT * FROM items WHERE status='extracted' AND content_type IS NULL "
-        "ORDER BY id").fetchall()
+    if reclassify:
+        # Re-tag everything the model has ever labelled. This is what makes
+        # "edit taxonomy.yml, rerun classify" true -- without it the normal
+        # query skips every item that already has a content_type, so an
+        # edited taxonomy or a run that fell back to the offline keyword
+        # matcher can never be corrected.
+        #
+        # Publisher-labelled items (pub_content_type set) are left alone:
+        # those came from the source's own metadata via field_map, are
+        # ground truth, and re-deriving them from the text would be strictly
+        # worse. Duplicates are left alone too.
+        rows = conn.execute(
+            "SELECT * FROM items WHERE status IN ('extracted','classified') "
+            "AND pub_content_type IS NULL ORDER BY id").fetchall()
+        log.info("reclassifying %d model-labelled items "
+                 "(%d publisher-labelled items untouched)", len(rows),
+                 conn.execute("SELECT COUNT(*) c FROM items "
+                              "WHERE pub_content_type IS NOT NULL"
+                              ).fetchone()["c"])
+    else:
+        rows = conn.execute(
+            "SELECT * FROM items WHERE status='extracted' "
+            "AND content_type IS NULL ORDER BY id").fetchall()
     if not rows:
         log.info("nothing left to classify")
         return pre_tagged
 
     api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if reclassify and not offline and not api_key:
+        # Refuse rather than quietly overwrite good labels with keyword
+        # guesses. A reclassify is destructive; falling back by accident
+        # would replace real classifications with 0.4 placeholders.
+        raise SystemExit(
+            "--reclassify needs ANTHROPIC_API_KEY. Set it, or pass --offline "
+            "as well if you really do want keyword labels.")
     if offline or not api_key:
         log.warning("classifying offline (keyword fallback) -- "
                     "set ANTHROPIC_API_KEY for real classification")
@@ -196,6 +223,11 @@ def classify_all(conn, offline: bool = False) -> int:
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--offline", action="store_true")
+    ap.add_argument("--offline", action="store_true",
+                    help="use keyword matching instead of the API")
+    ap.add_argument("--reclassify", action="store_true",
+                    help="re-tag items the model has already labelled; use "
+                         "after editing taxonomy.yml or after a run that "
+                         "fell back to offline matching")
     args = ap.parse_args()
-    classify_all(db(), offline=args.offline)
+    classify_all(db(), offline=args.offline, reclassify=args.reclassify)
