@@ -246,8 +246,18 @@ The dashboard is a static directory. Any host works.
 2. Add `ANTHROPIC_API_KEY` and `CONTACT_EMAIL` as repository secrets.
 3. `.github/workflows/weekly.yml` runs every Monday at 06:00 UTC and commits
    the updated database and JSON. There is a manual "Run workflow" button too.
-4. Deploy `site/` to Cloudflare Pages, then put **Cloudflare Access** in front
-   of it — free for up to 50 users, email or Google login, no code.
+4. Deploy with **Vercel**. Import the repo and accept the defaults —
+   `vercel.json` at the root sets `outputDirectory` to `site/`, so the
+   dashboard is served from the top of the domain without the project layout
+   having to change. Every harvest the workflow commits becomes a deployment.
+
+`site/robots.txt` and an `X-Robots-Tag` header keep it out of search results.
+That is deliberate: this tool links out to members, and has no business
+appearing above them in a search for their own work.
+
+If you later need it restricted rather than merely unindexed, Vercel's
+Deployment Protection (Pro) adds a shared password, and Cloudflare Pages plus
+**Cloudflare Access** does the same free for up to 50 users.
 
 The SQLite file lives in the repo. At this volume it stays small, git gives you
 free versioned backups, and you can open it in any SQLite browser. When it
@@ -260,10 +270,16 @@ waits two seconds between requests to the same host, and skips anything over
 8 MB. Leave all of that alone. These are peer organisations, and the cost of
 being noticed for the wrong reason is much higher than the cost of a slow run.
 
-The dashboard stores full text for search but displays only a short extract and
-a link out. If it ever becomes visible beyond your own team, keep it that way —
-it is both the safe answer on copyright and the one that sends traffic to
-members rather than away from them.
+The dashboard displays a short extract and a link out, never the article. Full
+text is stored in the database, where dedupe and classification need it, and is
+never exported: `export.py` ships only the title and the 240-character extract
+the card actually shows. That keeps the payload at roughly 38,000 characters
+across the whole corpus instead of 133,000, and it is what makes the site safe
+to host openly.
+
+The trade is real — client-side search matches titles and extracts, not full
+text. Take it. It is both the safe answer on copyright and the one that sends
+traffic to members rather than away from them.
 
 ## When a site needs JavaScript
 

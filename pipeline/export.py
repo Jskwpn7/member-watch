@@ -1,9 +1,14 @@
 """Stage 5 -- write the JSON the dashboard reads.
 
 The dashboard is a static file with no backend, so everything it needs has to
-be in these files. We ship a trimmed search blob rather than full body text:
-full articles would balloon the payload, and the dashboard links out to the
-source anyway.
+be in these files -- and because it is deployed publicly, what goes in them is
+a publishing decision, not just a performance one.
+
+Only what the page puts on screen is exported: a title and a short extract.
+Full body text stays in the database, where dedupe and classification need it,
+and never leaves. The cost is real and worth stating plainly: client-side
+search matches titles and extracts, not full text. That is the price of being
+able to host this openly without republishing members' articles.
 """
 
 from __future__ import annotations
@@ -15,7 +20,7 @@ from pathlib import Path
 from .common import ROOT, db, load_taxonomy, log, now
 
 OUT = ROOT / "site" / "data"
-SEARCH_CHARS = 1200     # how much body text goes into the client-side index
+EXTRACT_CHARS = 240     # what the card shows, and all that leaves the database
 
 
 def export(conn) -> int:
@@ -26,18 +31,17 @@ def export(conn) -> int:
         """SELECT id, source_id, org, country, region, url, title, summary,
                   published_at, date_source, first_seen, updated_at, word_count,
                   media_type, language, content_type, topics, evidence,
-                  confidence, pub_content_type,
-                  needs_review, body_text
+                  confidence, pub_content_type, needs_review
            FROM items WHERE status='classified'
            ORDER BY published_at DESC, id DESC""").fetchall()
 
     items = []
     for row in rows:
-        item = {k: row[k] for k in row.keys() if k != "body_text"}
+        item = {k: row[k] for k in row.keys()}
         item["topics"] = json.loads(row["topics"] or "[]")
-        item["search"] = re.sub(
-            r"\s+", " ", f"{row['title'] or ''} {row['body_text'] or ''}"
-        ).strip()[:SEARCH_CHARS].lower()
+        item["summary"] = re.sub(
+            r"\s+", " ", row["summary"] or "").strip()[:EXTRACT_CHARS]
+        item["search"] = f"{item['title'] or ''} {item['summary']}".lower()
         items.append(item)
 
     runs = [dict(r) for r in conn.execute(

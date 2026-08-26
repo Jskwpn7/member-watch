@@ -1,0 +1,5 @@
+# Member Watch is a working view of what consumer-advocacy organisations
+# publish. It links out to members rather than reproducing them, and it has
+# no business appearing in search results above the members themselves.
+User-agent: *
+Disallow: /
