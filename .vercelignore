@@ -1,0 +1,16 @@
+# Vercel serves site/ and nothing else. Keeping the harvester out of the
+# upload is what stops requirements.txt triggering Python runtime detection,
+# and it keeps corpus.db (1.3 MB and growing) off the CDN entirely.
+#
+# Leading slashes matter: a bare "data/" would also exclude site/data/,
+# which is the corpus the dashboard fetches.
+/pipeline/
+/tools/
+/tests/
+/sources/
+/data/
+/.github/
+/_to_delete/
+/requirements.txt
+/taxonomy.yml
+/README.md

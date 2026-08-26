@@ -1,6 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
 
+  "//": "This repo is a Python harvester that happens to emit a static site. Without framework:null Vercel sees requirements.txt at the root and tries to build the pipeline as a Python app. null selects the 'Other' preset; the empty commands say there is nothing to install and nothing to build.",
+
+  "framework": null,
+  "installCommand": "",
+  "buildCommand": "",
   "outputDirectory": "site",
 
   "headers": [
