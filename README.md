@@ -173,10 +173,25 @@ entirely for that source: cheaper, faster, and more accurate.
           Financial Services: finance
 ```
 
-Unmapped labels are dropped, so an unfamiliar one costs you a topic rather
-than corrupting the taxonomy. The publisher's exact wording is kept in
-`pub_content_type` and shown in the dashboard as a dashed tag beside our
-coarser label, so "Policy submission" is not flattened away into "policy".
+Unmapped labels are dropped, and where a source's labels map onto nothing the
+classifier reads the text and assigns topics itself, so an unfamiliar label
+costs nothing. The publisher's exact wording is kept in `pub_content_type` and
+shown in the dashboard as a dashed tag beside our coarser label, so "Policy
+submission" is not flattened away into "policy".
+
+**Only map a label that means one thing in our vocabulary.** A publisher's
+broadest labels are usually programme or team names, and mapping one of those
+is worse than leaving it out. Which?'s "Consumer Insight" was mapped to `law`
+and turned out to be the only topic on 38 of our first 89 items from that
+source — covering a supermarket merger, financial wellbeing, asbestos in toys
+and child car seats. Dropping it and two others like it halved `law` from 46
+items to 22 and raised `safety` from 2 to 13, which is a far better
+description of what Which? actually publishes.
+
+Note that a `field_map` no longer means the classifier is skipped entirely.
+No publisher supplies the evidence axis, so pre-tagged items still go to the
+model for that one field. They keep their own content type, and their own
+topics wherever those mapped.
 
 Check the aggregates in the API response before writing the map — they list
 every label in use with a count, which tells you what you are covering.

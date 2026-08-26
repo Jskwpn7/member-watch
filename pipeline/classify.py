@@ -254,12 +254,20 @@ def classify_all(conn, offline: bool = False, reclassify: bool = False) -> int:
                          or result["evidence"] is None)
 
             if row["pub_content_type"]:
-                # The publisher owns form and topics; we only add evidence.
+                # The publisher owns the form outright. It owns topics only
+                # where its own labels actually mapped onto ours -- a
+                # publisher's vocabulary is built for its site, not for this
+                # corpus, and its broadest labels are programme names that
+                # map onto nothing. Where the map came back empty the model
+                # fills the gap, rather than leaving the item untagged.
+                pub_topics = json.loads(row["topics"] or "[]")
+                topics = pub_topics or result["topics"]
                 conn.execute(
-                    "UPDATE items SET evidence=?, status='classified', "
-                    "needs_review=? WHERE id=?",
-                    (result["evidence"],
-                     int(result["evidence"] is None), row["id"]))
+                    "UPDATE items SET topics=?, evidence=?, "
+                    "status='classified', needs_review=? WHERE id=?",
+                    (json.dumps(topics), result["evidence"],
+                     int(result["evidence"] is None or not topics),
+                     row["id"]))
             else:
                 conn.execute(
                     """UPDATE items SET content_type=?, topics=?, evidence=?,

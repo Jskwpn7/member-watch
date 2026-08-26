@@ -64,11 +64,28 @@ targets:
           Financial Services: finance        # 376
           Fraud: scams                       # 155
           Sustainability: sustainability     # 120
-          Household Essentials: energy       # 521
           Travel: travel                     # 285
           Fair Consumer Markets: law         # 189
           Trade: law                         #  48
-          Consumer Insight: law              # 228
+
+          # DELIBERATELY UNMAPPED -- these are programme names, not subjects.
+          #
+          # 'Consumer Insight' (228) was mapped to law and was the only topic
+          # on 38 of our first 89 items from this source. Those items covered
+          # a supermarket merger, financial wellbeing, asbestos in toys and
+          # child car seats. Nothing links them except the team that produced
+          # them, and mapping it made 'law' the corpus junk drawer.
+          #
+          # 'Household Essentials' (521) was mapped to energy, but six of the
+          # eight items carrying it were supermarket pricing or a car seat
+          # recall. It spans groceries, utilities and white goods -- three of
+          # our topics, so it cannot honestly become any one of them.
+          #
+          # 'Policy and Insight' is a section of the site, not a subject.
+          #
+          # Unmapped means the classifier reads the text and assigns topics
+          # itself, which is what these items needed all along. Only map a
+          # publisher label where it means one thing in our vocabulary.
 
   # Which?'s general consumer feed. High volume (~30/week) and mostly magazine
   # content -- product advice, recipes, gardening. No publisher labels here, so

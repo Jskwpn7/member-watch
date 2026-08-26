@@ -81,7 +81,8 @@ def db() -> sqlite3.Connection:
     # IF NOT EXISTS will not do this, and a silent missing column shows up
     # much later as a confusing insert failure.
     existing = {row["name"] for row in conn.execute("PRAGMA table_info(items)")}
-    for column, decl in (("pub_content_type", "TEXT"), ("pub_topics", "TEXT")):
+    for column, decl in (("pub_content_type", "TEXT"), ("pub_topics", "TEXT"),
+                        ("evidence", "TEXT")):
         if column not in existing:
             conn.execute(f"ALTER TABLE items ADD COLUMN {column} {decl}")
             log.info("migrated: added items.%s", column)
