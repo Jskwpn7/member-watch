@@ -1,19 +1,58 @@
-# The two axes every item is tagged on. Edit freely -- classify.py reads this
-# file at runtime, so changing the taxonomy means rerunning classify only,
+# The axes every item is tagged on. Edit freely -- classify.py reads this file
+# at runtime, so changing the taxonomy means rerunning
+#   python -m pipeline.classify --reclassify
 # not refetching anything.
 
+# ---------------------------------------------------------------------------
+# CONTENT TYPE -- exactly one. This axis describes the FORM of the item: what
+# kind of thing the organisation published, not what it contains.
+#
+# It deliberately does NOT answer "is this research?". Members constantly
+# publish original evidence in the form of a press release -- "Aldi remains
+# the UK's cheapest supermarket" is a press release reporting a price survey.
+# Forcing one label to carry both facts hid 34 of our first 121 items under
+# 'news'. Substance is recorded separately, on the evidence axis below.
 content_type:
-  news:        Newsroom item or press release
-  research:    Report, study, survey or evidence submission
-  policy:      Consultation response, position paper or advocacy submission
+  news:        Reports something that has happened -- a press statement, announcement or reaction to an external event
+  advice:      Practical guidance a consumer can act on -- how-to, explainer, reader question, "what this means for you"
+  research:    Presented primarily as a study, report or evidence submission in its own right
+  policy:      Consultation response, position paper or advocacy submission to a decision-maker
   enforcement: Legal action, complaint, regulator referral or company sanction
-  review:      Product test, comparison or buying advice
+  review:      Product test, comparison or buying advice about specific named products
   campaign:    Public campaign, petition or call to action
-  blog:        Opinion, commentary or staff blog
+  blog:        Opinion, commentary or staff blog written in a personal voice
   event:       Conference, webinar or announcement of one
 
-# Mirrors the Consumers International programme areas, so the vocabulary
-# matches what the network already uses.
+# The news / advice / research boundary, in order. Apply the first that fits:
+#
+#   1. Is it addressed to a decision-maker rather than the public?  -> policy
+#   2. Is the item itself the study -- a report, a paper, a dataset
+#      published as such?                                           -> research
+#   3. Does it rate or compare specific named products?             -> review
+#   4. Is there a news hook -- something happened, and this reports
+#      or reacts to it?                                             -> news
+#   5. Is it teaching the reader how to do or decide something?     -> advice
+#
+# A press release announcing survey findings is 'news' by rule 4, and carries
+# evidence: original. An explainer built on someone else's figures is 'advice'
+# by rule 5, and carries evidence: cited. Neither is a judgement call.
+
+# ---------------------------------------------------------------------------
+# EVIDENCE -- exactly one. Who produced the evidence the item rests on.
+#
+# This is the axis that makes "what has our network actually published this
+# quarter" answerable. Publisher labels never supply it, so items whose
+# content_type came from a source's field_map still go through the classifier
+# for this field alone.
+evidence:
+  original: The organisation produced the evidence itself -- its own survey, lab test, price monitoring, investigation, mystery shop or FOI
+  cited:    Reports or interprets evidence produced by someone else -- a regulator's figures, another body's survey, official statistics
+  none:     No substantive evidence base -- an explainer, opinion, announcement or reaction
+
+# ---------------------------------------------------------------------------
+# TOPIC -- one to three, most relevant first. Mirrors the Consumers
+# International programme areas, so the vocabulary matches what the network
+# already uses.
 topic:
   digital:        Digital rights, data protection, privacy, AI, online platforms
   finance:        Banking, credit, insurance, payments, digital finance
@@ -27,20 +66,24 @@ topic:
   telecoms:       Broadband, mobile, connectivity, postal
   housing:        Housing, renting, home services, tradespeople
 
+# ---------------------------------------------------------------------------
 # Named front doors for the dashboard. Each is a saved filter.
 lenses:
   - id: this_week
     label: This week
     filter: {days: 7}
+  - id: network_research
+    label: Network research
+    filter: {evidence: [original]}
   - id: digital_finance
     label: Digital finance
     filter: {topics: [finance, digital]}
   - id: enforcement
     label: Enforcement
     filter: {content_types: [enforcement]}
-  - id: research
-    label: New research
-    filter: {content_types: [research, policy]}
+  - id: policy
+    label: Policy submissions
+    filter: {content_types: [policy, research]}
   - id: review_queue
     label: Needs review
     filter: {needs_review: true}

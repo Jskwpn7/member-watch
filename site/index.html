@@ -21,6 +21,7 @@
   --rule:#d0d7de; --rule-soft:#e3e8ed;
   --signal:#1b44c8; --signal-wash:#e6ebfb;
   --review:#8b1e5b; --review-wash:#f7e9f1;
+  --evid:#0f6c4f; --evid-wash:#e2f1eb;
   --gutter:132px; --radius:3px;
 }
 *{box-sizing:border-box}
@@ -121,6 +122,11 @@ a{color:var(--signal)}
   background:var(--signal-wash); border-color:var(--signal); color:var(--signal)}
 .tag.review{background:var(--review-wash); border-color:var(--review);
   color:var(--review)}
+/* Who produced the evidence. Solid = the member's own work, outlined = they
+   are reporting someone else's. */
+.tag.evid{color:var(--evid); border-color:var(--evid)}
+.tag.evid.original{background:var(--evid-wash)}
+.tag.evid.cited{border-style:dotted}
 
 .empty{padding:64px 0; max-width:52ch}
 .empty h2{font:400 22px Newsreader,Georgia,serif; margin:0 0 8px}
@@ -222,6 +228,7 @@ function filtered(){
     if(state.topics.size && !item.topics.some(t => state.topics.has(t))) return false;
     if(f.needs_review && !item.needs_review) return false;
     if(f.content_types && !f.content_types.includes(item.content_type)) return false;
+    if(f.evidence && !f.evidence.includes(item.evidence)) return false;
     if(f.topics && !item.topics.some(t => f.topics.includes(t))) return false;
     if(cutoff && item.first_seen.slice(0,10) < cutoff) return false;
     return score(item, terms) > 0;
@@ -289,6 +296,11 @@ function card(item, terms, isNew){
         >${esc(item.content_type||"untagged")}</span>
       ${item.pub_content_type ? `<span class="tag pub" title="The publisher's own label"
         >${esc(item.pub_content_type)}</span>` : ""}
+      ${item.evidence && item.evidence !== "none"
+        ? `<span class="tag evid ${esc(item.evidence)}"
+            title="${esc((DATA.taxonomy.evidence||{})[item.evidence]||"")}"
+            >${item.evidence === "original" ? "own research" : "cites research"}</span>`
+        : ""}
       ${item.topics.map(t =>
         `<button class="tag topic" data-topic="${esc(t)}"
           aria-pressed="${state.topics.has(t)}"

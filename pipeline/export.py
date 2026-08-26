@@ -25,8 +25,8 @@ def export(conn) -> int:
     rows = conn.execute(
         """SELECT id, source_id, org, country, region, url, title, summary,
                   published_at, date_source, first_seen, updated_at, word_count,
-                  media_type, language, content_type, topics, confidence,
-                  pub_content_type,
+                  media_type, language, content_type, topics, evidence,
+                  confidence, pub_content_type,
                   needs_review, body_text
            FROM items WHERE status='classified'
            ORDER BY published_at DESC, id DESC""").fetchall()
@@ -55,6 +55,7 @@ def export(conn) -> int:
         "generated_at": now(),
         "taxonomy": {"content_type": taxonomy["content_type"],
                      "topic": taxonomy["topic"],
+                     "evidence": taxonomy["evidence"],
                      "lenses": taxonomy["lenses"]},
         "sources": sources,
         "runs": runs,

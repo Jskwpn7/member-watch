@@ -20,8 +20,9 @@ CREATE TABLE IF NOT EXISTS items (
   content_hash   TEXT,
   media_type     TEXT,
   language       TEXT,
-  content_type   TEXT,
+  content_type   TEXT,      -- the FORM of the item (see taxonomy.yml)
   topics         TEXT,
+  evidence       TEXT,      -- original | cited | none -- who produced the evidence
   pub_content_type TEXT,   -- the publisher's own label, verbatim
   pub_topics       TEXT,   -- json array of the publisher's own topics
 
@@ -37,6 +38,7 @@ CREATE INDEX IF NOT EXISTS idx_items_status ON items(status);
 CREATE INDEX IF NOT EXISTS idx_items_hash   ON items(content_hash);
 CREATE INDEX IF NOT EXISTS idx_items_seen   ON items(first_seen);
 CREATE INDEX IF NOT EXISTS idx_items_source ON items(source_id);
+CREATE INDEX IF NOT EXISTS idx_items_evid   ON items(evidence);
 
 CREATE TABLE IF NOT EXISTS revisions (
   id           INTEGER PRIMARY KEY,
